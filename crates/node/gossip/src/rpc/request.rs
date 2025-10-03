@@ -8,7 +8,7 @@ use std::{
 };
 
 use crate::{GossipDriver, GossipScores};
-use alloy_primitives::map::foldhash::fast::RandomState;
+use alloy_primitives::map::DefaultHashBuilder;
 use discv5::{
     enr::{NodeId, k256::ecdsa},
     multiaddr::Protocol,
@@ -373,7 +373,7 @@ impl P2pRpcRequest {
                 .collect::<HashMap<_, _>>();
 
             // Build the peer info map.
-            let infos: HashMap<String, PeerInfo, RandomState> = node_to_peer_id
+            let infos: HashMap<String, PeerInfo, DefaultHashBuilder> = node_to_peer_id
                 .iter()
                 .map(|(id, peer_id)| {
                     let (maybe_enr, maybe_status) = node_to_table_infos.get(id).cloned().unzip();
