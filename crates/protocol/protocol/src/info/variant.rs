@@ -89,6 +89,12 @@ impl L1BlockInfoTx {
                 None if l1_config.osaka_time.is_some_and(|time| time <= l1_header.timestamp) => {
                     BlobParams::osaka()
                 }
+                None if l1_config.bpo1_time.is_some_and(|time| time <= l1_header.timestamp) => {
+                    BlobParams::bpo1()
+                }
+                None if l1_config.bpo2_time.is_some_and(|time| time <= l1_header.timestamp) => {
+                    BlobParams::bpo2()
+                }
                 None if l1_config
                     .prague_time.is_some_and(|time| time <= l1_header.timestamp) &&
                     // There was an incident on OP Stack Sepolia chains (03-05-2025) when L1 activated pectra,
