@@ -106,6 +106,8 @@ impl L1BlockInfoTx {
                 }
                 _ => BlobParams::cancun(),
             };
+        
+        tracing::info!("blob_fee_config for l1 block {:?} is {:?}", l1_header.number, blob_fee_config);
 
         let blob_base_fee = l1_header.blob_fee(blob_fee_config).unwrap_or(1);
         let block_hash = l1_header.hash_slow();
