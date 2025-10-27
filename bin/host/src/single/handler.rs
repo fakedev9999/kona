@@ -41,29 +41,29 @@ impl HintHandler for SingleChainHintHandler {
                 ensure!(hint.data.len() == 32, "Invalid hint data length");
 
                 let hash: B256 = hint.data.as_ref().try_into()?;
-                let raw_header: Bytes =
-                    providers.l1.client().request("debug_getRawHeader", [hash]).await?;
+                // let raw_header: Bytes =
+                //     providers.l1.client().request("debug_getRawHeader", [hash]).await?;
 
-                // Fallback: If debug_getRawHeader returns empty (e.g., Anvil fork mode),
-                // fetch using eth_getBlockByHash and RLP encode manually
-                let raw_header = if raw_header.is_empty() {
-                    warn!(target: "single_hint_handler",
-                        "debug_getRawHeader returned empty for block {}, falling back to eth_getBlockByHash",
-                        hash
-                    );
+                // // Fallback: If debug_getRawHeader returns empty (e.g., Anvil fork mode),
+                // // fetch using eth_getBlockByHash and RLP encode manually
+                // let raw_header = if raw_header.is_empty() {
+                //     warn!(target: "single_hint_handler",
+                //         "debug_getRawHeader returned empty for block {}, falling back to eth_getBlockByHash",
+                //         hash
+                //     );
 
-                    let block = providers
-                        .l1
-                        .get_block_by_hash(hash)
-                        .await?
-                        .ok_or(anyhow!("Block not found for hash {}", hash))?;
+                let block = providers
+                    .l1
+                    .get_block_by_hash(hash)
+                    .await?
+                    .ok_or(anyhow!("Block not found for hash {}", hash))?;
 
-                    let mut encoded = Vec::new();
-                    block.header.inner.encode(&mut encoded);
-                    Bytes::from(encoded)
-                } else {
-                    raw_header
-                };
+                let mut encoded = Vec::new();
+                block.header.inner.encode(&mut encoded);
+                let raw_header = Bytes::from(encoded);
+                // } else {
+                //     raw_header
+                // };
 
                 let mut kv_lock = kv.write().await;
                 kv_lock.set(PreimageKey::new_keccak256(*hash).into(), raw_header.into())?;
