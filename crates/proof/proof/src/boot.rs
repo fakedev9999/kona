@@ -186,24 +186,28 @@ impl BootInfo {
     where
         O: PreimageOracleClient + Send,
     {
+        tracing::info!("Loading L1 head");
         let mut l1_head: B256 = B256::ZERO;
         oracle
             .get_exact(PreimageKey::new_local(L1_HEAD_KEY.to()), l1_head.as_mut())
             .await
             .map_err(OracleProviderError::Preimage)?;
 
+        tracing::info!("Loading L2 output root");
         let mut l2_output_root: B256 = B256::ZERO;
         oracle
             .get_exact(PreimageKey::new_local(L2_OUTPUT_ROOT_KEY.to()), l2_output_root.as_mut())
             .await
             .map_err(OracleProviderError::Preimage)?;
 
+        tracing::info!("Loading L2 claim");
         let mut l2_claim: B256 = B256::ZERO;
         oracle
             .get_exact(PreimageKey::new_local(L2_CLAIM_KEY.to()), l2_claim.as_mut())
             .await
             .map_err(OracleProviderError::Preimage)?;
 
+        tracing::info!("Loading L2 claim block number");
         let l2_claim_block = u64::from_be_bytes(
             oracle
                 .get(PreimageKey::new_local(L2_CLAIM_BLOCK_NUMBER_KEY.to()))
@@ -213,6 +217,7 @@ impl BootInfo {
                 .try_into()
                 .map_err(OracleProviderError::SliceConversion)?,
         );
+        tracing::info!("Loading chain ID");
         let chain_id = u64::from_be_bytes(
             oracle
                 .get(PreimageKey::new_local(L2_CHAIN_ID_KEY.to()))
@@ -223,6 +228,7 @@ impl BootInfo {
                 .map_err(OracleProviderError::SliceConversion)?,
         );
 
+        tracing::info!("Loading rollup config");
         // Attempt to load the rollup config from the chain ID. If there is no config for the chain,
         // fall back to loading the config from the preimage oracle.
         let rollup_config = if let Some(config) = ROLLUP_CONFIGS.get(&chain_id) {
@@ -240,6 +246,7 @@ impl BootInfo {
             serde_json::from_slice(&ser_cfg).map_err(OracleProviderError::Serde)?
         };
 
+        tracing::info!("Loading L1 config");
         // Attempt to load the rollup config from the chain ID. If there is no config for the chain,
         // fall back to loading the config from the preimage oracle.
         let l1_config = if let Some(config) = L1_CONFIGS.get(&rollup_config.l1_chain_id) {
@@ -258,6 +265,7 @@ impl BootInfo {
             serde_json::from_slice(&ser_cfg).map_err(OracleProviderError::Serde)?
         };
 
+        tracing::info!("Successfully loaded boot information");
         debug!(
             target: "boot_loader",
             l1_head = %l1_head,
