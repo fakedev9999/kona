@@ -11,7 +11,7 @@ use alloy_eips::{
 };
 use alloy_primitives::{Address, B256, Bytes, keccak256};
 use alloy_provider::Provider;
-use alloy_rlp::Decodable;
+use alloy_rlp::{Decodable, Encodable};
 use alloy_rpc_types::{Block, debug::ExecutionWitness};
 use anyhow::{Result, anyhow, ensure};
 use ark_ff::{BigInteger, PrimeField};
@@ -43,6 +43,27 @@ impl HintHandler for SingleChainHintHandler {
                 let hash: B256 = hint.data.as_ref().try_into()?;
                 let raw_header: Bytes =
                     providers.l1.client().request("debug_getRawHeader", [hash]).await?;
+
+                // Fallback: If debug_getRawHeader returns empty (e.g., Anvil fork mode),
+                // fetch using eth_getBlockByHash and RLP encode manually
+                let raw_header = if raw_header.is_empty() {
+                    warn!(target: "single_hint_handler",
+                        "debug_getRawHeader returned empty for block {}, falling back to eth_getBlockByHash",
+                        hash
+                    );
+
+                    let block = providers
+                        .l1
+                        .get_block_by_hash(hash)
+                        .await?
+                        .ok_or(anyhow!("Block not found for hash {}", hash))?;
+
+                    let mut encoded = Vec::new();
+                    block.header.inner.encode(&mut encoded);
+                    Bytes::from(encoded)
+                } else {
+                    raw_header
+                };
 
                 let mut kv_lock = kv.write().await;
                 kv_lock.set(PreimageKey::new_keccak256(*hash).into(), raw_header.into())?;
